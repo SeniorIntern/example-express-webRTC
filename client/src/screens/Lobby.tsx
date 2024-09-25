@@ -1,5 +1,6 @@
 import { useSocket } from "@/context/socketProvider";
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 
 type UserInfo = {
@@ -8,10 +9,28 @@ type UserInfo = {
 };
 
 export default function Lobby() {
-  console.log("lobby rendered");
-
   const [userInfo, setUserInfo] = useState<UserInfo>({} as UserInfo);
+
   const socket = useSocket();
+
+  const navigate = useNavigate();
+
+  const handleJoinRoom = useCallback(
+    (data: UserInfo) => {
+      const { room, email } = data;
+      console.log(room, email);
+      navigate(`/room/${room}`);
+    },
+    [navigate],
+  );
+
+  useEffect(() => {
+    socket?.on("room:join", handleJoinRoom);
+
+    return () => {
+      socket?.off("room:join", handleJoinRoom);
+    };
+  }, [socket]);
 
   const handleFormSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {

@@ -29,14 +29,23 @@ const io = new Server(httpServer, {
   },
 });
 
+const emailToSocketIdMap = new Map();
+const socketIdToEmailMap = new Map();
+
 io.on("connection", (socket) => {
   console.log("client connected. ID===", socket.id);
-  socket.onAny((ev, { ...args }) => {
-    console.log("got event===", ev);
-    console.log("event args===", args);
-  });
+
   socket.on("room:join", (data: UserInfo) => {
-    console.log("payload===", data);
+    const { email, room } = data;
+
+    emailToSocketIdMap.set(email, socket.id);
+    socketIdToEmailMap.set(socket.id, email);
+
+    // emit event to existing users in the room
+    io.to(String(room)).emit("user:joined", { email, id: socket.id });
+
+    socket.join(String(room));
+    io.to(socket.id).emit("room:join", data);
   });
 });
 
