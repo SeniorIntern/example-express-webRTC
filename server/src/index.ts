@@ -8,6 +8,16 @@ type UserInfo = {
   room: number;
 };
 
+type UserOffer = {
+  to: string;
+  offer: RTCSessionDescriptionInit;
+};
+
+type UserCallAcceptPaylod = {
+  to: string;
+  ans: RTCSessionDescriptionInit;
+};
+
 const app = express();
 app.use(
   cors({
@@ -46,6 +56,23 @@ io.on("connection", (socket) => {
 
     socket.join(String(room));
     io.to(socket.id).emit("room:join", data);
+  });
+
+  // recieve stream from caller and send to call reciever
+  socket.on("user:call", (data: UserOffer) => {
+    console.log("recieved stream", data);
+
+    const { to, offer } = data;
+    io.to(to).emit("incoming:call", {
+      from: socket.id,
+      offer,
+    });
+  });
+
+  //
+  socket.on("call:accepted", (data: UserCallAcceptPaylod) => {
+    const { to, ans } = data;
+    io.to(to).emit("call:accepted", { from: socket.id, ans });
   });
 });
 
